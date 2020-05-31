@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-from math.pkg import setting
+from skill.math import setting
 
 class Employee:
     '所有员工的基类'
