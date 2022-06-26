@@ -1,7 +1,19 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: UTF-8 -*-
-from skill.math import setting
+import sys
+import logging
 
+sys.path.append("/Users/lukun/apps/works/python/py_notes/basic")
+print("sys.path:{}:".format(sys.path))
+
+from pkg.setting import setting
+
+logging.basicConfig(level=logging.DEBUG,
+                    format="%(asctime)s %(lineno)d %(message)s",
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filename='test.log',
+                    filemode='w')
+                    
 class Employee:
     '所有员工的基类'
     empCount = 0
@@ -35,12 +47,17 @@ class Child(Employee):
         print("public", self.public)
 
 
-print("Employee.__name__:", Employee.__name__)  # 类名
-print("Employee.__module__:", Employee.__module__)  # 模块名
-employee = Employee("jack", 11)
-employee.displayCount()
-employee.displayEmployee()
+def main():
+    logging.debug("debug")
+    print("Employee.__name__:", Employee.__name__)  # 类名
+    print("Employee.__module__:", Employee.__module__)  # 模块名
+    employee = Employee("jack", 11)
+    employee.displayCount()
+    employee.displayEmployee()
 
-c = Child()
-c.sex = "男"
-c.getAge()
+    c = Child()
+    c.sex = "男"
+    c.getAge()
+
+if __name__ == '__main__':
+    main()
