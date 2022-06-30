@@ -1,7 +1,9 @@
 ' user module '
 __author__ = 'Michael Liao'
 
-print("user module name",__name__)
+print("user module name", __name__)
+
+
 def userInfo():
     info = {"name": "jack", "age": 21, "sex": "男"}
 
