@@ -13,7 +13,8 @@ logging.basicConfig(level=logging.DEBUG,
                     datefmt='%a, %d %b %Y %H:%M:%S',
                     filename='test.log',
                     filemode='w')
-                    
+
+
 class Employee:
     '所有员工的基类'
     empCount = 0
@@ -58,6 +59,28 @@ def main():
     c = Child()
     c.sex = "男"
     c.getAge()
+
+
+class MyNumbers:
+
+    def __iter__(self):
+        self.a = 1
+        return self
+
+    def __next__(self):
+        if self.a <= 20:
+            x = self.a
+            self.a += 1
+            return x
+        else:
+            raise StopIteration
+
+
+myclass = MyNumbers()
+myiter = iter(myclass)
+
+for x in myiter:
+    print(x)
 
 if __name__ == '__main__':
     main()
