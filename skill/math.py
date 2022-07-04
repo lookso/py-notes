@@ -1,170 +1,181 @@
-import random
+# /usr/bin/env python3
+# _*_ coding: utf-8 _*_
 import re
 
-list1 = None
-list2 = None
 
-if (not list1 and list2):
-    print(123)
-else:
-    print(345)
-
-name = "hello".join("123").join("456")
-print(name)
-
-print("----------------------------------\n")
-
-response = dict()
-
-outIntermMessages = []
-
-a = random.randint(1, 999)
-b = random.random()
-ops = ['+', '-', '*', '/']
-op = ops[random.randint(0, 3)]
-expression = "{0}{1}{2:.03f}".format(a, op, b)
-result = str(eval(expression))
-msg = "我知道 {0} = {1} 。".format(expression, result)
-msg2 = "你接着出题考我吧。"
-
-response['textOutput'] = msg + msg2
-
-print(response)
-print("\n")
+def matching_formula_value(num):
+    # 判断输入公式是否合法，如包含字符或者特殊字符，做特殊处理
+    try:
+        num = float(num)
+        return True
+    except (ValueError, TypeError) as diag:
+        pass
 
 
-class DialogMath:
-    nums = [
-        ('.', ['.', '点']),
-        ('0', ['零', '〇', '０']),
-        ('1', ['一', '壹', '１']),
-        ('2', ['二', '贰', '２', '两', '貳', '貮', '俩']),
-        ('3', ['三', '叁', '３']),
-        ('4', ['四', '肆', '４']),
-        ('5', ['五', '伍', '５']),
-        ('6', ['六', '陆', '６']),
-        ('7', ['七', '柒', '７']),
-        ('8', ['八', '捌', '８']),
-        ('9', ['九', '玖', '９'])
-    ]
+def formatting_formula(formula):  # 去除计算公式中多余的"+-"号
+    formula = formula.replace("++", "+")
+    formula = formula.replace("+-", "-")
+    formula = formula.replace("-+", "-")
+    formula = formula.replace("--", "+")
+    return formula
 
-    scales = [
-        ('1', ['.', '点']),
-        ('10', ['十', '拾']),
-        ('100', ['百', '佰']),
-        ('1000', ['千', '仟']),
-        ('10000', ['万', '萬']),
-        ('100000000', ['亿', '億']),
-        ('1000000000000', ['兆'])
-    ]
 
-    unaryOperators = [
-        ('sqrt2p', ['根号']),
-        ('sqrt2', ['平方根', '开方']),
-        ('sqrt3', ['立方根']),
-        ('sqrt', ['次方根']),
-        ('pow', ['次方', '次幂', ]),
-        ('pow2', ['平方']),
-        ('pow3', ['立方', '幂']),
-        ('opposite', ['负']),
-        ('factorial', ['阶乘']),
-        ('sin', ['正弦']),
-        ('cos', ['余弦']),
-        ('tan', ['正切']),
-        ('cot', ['余切']),
-        ('pi', ['π']),
-        ('log', ['log'])
-    ]
+def matching_plusminus_operator_and_multiplydivide_expression_sets(parenthesises_formula):  # 匹配加减操作符和加减表达式列表
+    # 取出圆括号表达式中所有的"+-"号，保存为列表形式，如['-', '+', '+']
+    # 用"+-"号作为分隔符，将圆括号中的乘除表达式取出，保存为列表形式，如['9', '2*5/3', '7/3*99/4*2998', '10*568/14']
+    parenthesises_formula = re.sub("[()]", "", parenthesises_formula)
+    plusminus_operator_list = re.findall("[+-]", parenthesises_formula)
+    plusminus_expression_list = re.split("[+-]", parenthesises_formula)
 
-    binaryOperators = [
-        ('+', ['加', '＋']),
-        ('-', ['减', '－']),
-        ('*', ['乘以', '乘', '×']),
-        ('/', ['除以', '除', '比', '÷', '：', ':']),
-        (':', ['分之']),
-        ('(', ['左括号', '(', '（', '(', '（']),
-        (')', ['右括号', ')', '）', ')', '）'])
-    ]
+    if plusminus_expression_list[0] == "":
+        # 圆括号表达式列表中，如果第一个元素为空，则表明第一个元素为一个负数，则"-"号开头，将第一个"-"号合并到列表第一个元素
+        plusminus_expression_list[1] = plusminus_operator_list[0] + plusminus_expression_list[1]
+        del plusminus_expression_list[0]
+        del plusminus_operator_list[0]
 
-    mathFeatures = [
-        '=',
-        '＝',
-        '是(几|多少)',
-        '为',
-        '得',
-        '等',
-        '得到',
-        '等于'
-    ]
+    for i, e in enumerate(plusminus_expression_list):
+        # 处理乘除表达式中的第二个数是负数的情况，如 1 * -1， 1 * -2 + 3 * -5 - 6/-3表达式，第一步匹配是这样"['1 * ', '2 ', ' 3 * ', '5 ', ' 6/', '3']"
+        # 在这一步需要处理成正确的结果：['1 * -2', '3 * -5', '6/-3']
+        e = e.strip()
+        if e.endswith("*") or e.endswith("/"):
+            try:
+                plusminus_expression_list[i] = plusminus_expression_list[i] + plusminus_operator_list[i] + \
+                                               plusminus_expression_list[i + 1]
+                del plusminus_expression_list[i + 1]
+                del plusminus_operator_list[i]
+            except IndexError as diag:
+                pass
+    return plusminus_operator_list, plusminus_expression_list
 
-    specWords = [
-        '的',
-        '开'
-    ]
 
-    substitutes = {
+def matching_multiply_divide_operator_and_expression_sets(plusminus_equations):  # 匹配乘除操作符和乘除表达式列表
+    operator_list = re.findall("[*/]", plusminus_equations)
+    value_list = re.split("[*/]", plusminus_equations)
+    return operator_list, value_list
 
-        '乘乘': '乘'
-    }
 
-    interfereWord = [
-        "一下",
-        "一猜",
-    ]
+def plus_minus_calc(plusminus_operator_list, plusminus_expression_list):  # 加减运算
+    '''对运算公式进行加减运算，返回加减结果'''
+    plusminus_result = None
+    for i, e in enumerate(plusminus_expression_list):
+        match = matching_formula_value(e)
+        if match == True:
+            if plusminus_result:
+                if plusminus_operator_list[i - 1] == "+":
+                    plusminus_result += float(e)
+                elif plusminus_operator_list[i - 1] == "-":
+                    plusminus_result -= float(e)
+            else:
+                plusminus_result = float(e)
+        else:
+            print("\33[33;0m输入的公式中包含非数字字符!\33[0m")
+            print("\33[33;0m尝试运算: %s\33[0m" % e)
+            e = re.sub("\D", "", e)
+            if e == "": e = 0
+            if plusminus_result:
+                if plusminus_operator_list[i - 1] == "+":
+                    plusminus_result += float(e)
+                elif plusminus_operator_list[i - 1] == "-":
+                    plusminus_result -= float(e)
+            else:
+                try:
+                    plusminus_result = float(e)
+                except ValueError as diag:
+                    print("\33[33;1m无效输入！\33[0m")
+    return plusminus_result
 
-    blackList = [
-        "年", "月", "周", "星期", "日", "天", "时", "分", "秒",
-        "你和", "和你",
-        "元", "钱", "币",
-        "三围"
-    ]
 
-    replyPrefix = ["这个难不倒我，"]
+def multiply_divide_calc(multiply_divide_operator_list, multiply_divide_value_list):  # 乘除运算
+    '''对运算公式进行乘除运算，返回乘除结果'''
+    multiply_divide_result = None
+    for i, num in enumerate(multiply_divide_value_list):
+        match = matching_formula_value(num)
+        if match == True:
+            if multiply_divide_result:
+                if multiply_divide_operator_list[i - 1] == "*":
+                    multiply_divide_result *= float(num)
+                elif multiply_divide_operator_list[i - 1] == "/":
+                    try:
+                        multiply_divide_result /= float(num)
+                    except ZeroDivisionError as diag:
+                        multiply_divide_result = 0
+                        print("\33[33;0m输入的公式中存在除数为0，重新输入！\33[0m")
+            else:
+                multiply_divide_result = float(num)
+        else:
+            print("\33[33;0m输入的公式中包含非数字字符!\33[0m")
+            print("\33[33;0m尝试运算: %s\33[0m" % num)
+            num = re.sub("\D", "", num)
+            if num == "": num = 1
+            if multiply_divide_result:
+                if multiply_divide_operator_list[i - 1] == "*":
+                    multiply_divide_result *= float(num)
+                elif multiply_divide_operator_list[i - 1] == "/":
+                    multiply_divide_result /= float(num)
+            else:
+                try:
+                    multiply_divide_result = float(num)
+                except ValueError as diag:
+                    print("\33[33;1m无效输入！\33[0m")
+    return multiply_divide_result
 
-    defaultTextOutput = [
-        "我只听到了一个数字，你说的太快啦，慢一点说吧",
-    ]
 
-    def __init__(self):
+def calculating_priority_formulas(priority_formula):  # 计算圆括号表达式
+    """"""
+    plusminus_operator_list, plusminus_expression_list = matching_plusminus_operator_and_multiplydivide_expression_sets(
+        priority_formula)
+    print("-----------")
+    print(plusminus_operator_list, plusminus_expression_list)
+    for index, equations in enumerate(plusminus_expression_list):
+        if "*" in equations or "/" in equations:
+            """"""
+            multiply_divide_operator_list, multiply_divide_value_list = matching_multiply_divide_operator_and_expression_sets(
+                equations)
+            multiply_divide_result = multiply_divide_calc(multiply_divide_operator_list,
+                                                          multiply_divide_value_list)  # 取出乘除表达式进行乘除运算
+            plusminus_expression_list[index] = multiply_divide_result
+    plus_minus_result = plus_minus_calc(plusminus_operator_list, plusminus_expression_list)  # 将乘除的结果进行加减运算
+    print("%s 运算结果: %s" % (priority_formula, plus_minus_result))
+    return plus_minus_result
 
-        self.allOperators = []
-        self.allNums = []
-        self.arabiaNums = []
 
-        for operator in self.unaryOperators:
-            self.allOperators.append(operator[0])
-            self.allOperators.extend(operator[1])
+def start_mathematical_operations(formula):
+    """ 运算程序入口，对输入的数学公式进行处理，匹配最底层圆括号表达式，并交给乘除函数计算返回结果，替换圆括号表达式"""
+    formula = formula.replace(" ", "")  # 去掉表达式多余的空格
+    formula = formatting_formula(formula)  # 去掉表达式里重复的"+-"号
+    print(formula)
+    parenthesises_flag = True
+    while parenthesises_flag:
+        formula = formatting_formula(formula)
+        parenthesis_formula = re.search(r"\(([^()]+)\)", formula)
+        if parenthesis_formula:
+            parenthesis_formula = parenthesis_formula.group()
+            parenthesis_calc_result = calculating_priority_formulas(parenthesis_formula)
+            formula = formula.replace(parenthesis_formula, str(parenthesis_calc_result))
+            print("parenthesis_calc_result: %s" % formula)
+        else:
+            calc_result = calculating_priority_formulas(formula)
+            parenthesises_flag = False
+            print("最后的运算结果: \33[31;1m%s\33[0m" % calc_result)
 
-        for operator in self.binaryOperators:
-            self.allOperators.append(operator[0])
-            self.allOperators.extend(operator[1])
 
-        for num in self.nums:
-            self.allNums.append(num[0])
-            self.allNums.extend(num[1])
-            self.arabiaNums.extend(num[0])
+def myCalcMain():
+    prompt = '''Welcome to the MyCalc monitor.
+Server Version: MyCalc 1.0
+请输入你的计算公式, 计算器会将计算结果输出到屏幕上; 退出（exit/quit）
+示例公式: 1 - 2 * ( (60-30 +(-40/5) * (9-2*5/3 + 7 /3*99/4*2998 +10 * 568/14 )) - (-4*3)/ (16-3*2) )
+正确结果: 2776672.6952380952380952380952381
+'''
+    print(prompt)
+    while True:
+        formula = input("MyCalc> ").strip()
+        if formula == "exit" or formula == "quit":
+            exit("Bye.")
+        elif formula == "":
+            continue
+        else:
+            start_mathematical_operations(formula)
 
-        for num in self.scales:
-            self.allNums.extend(num[1])
 
-        self.patternNum = re.compile('|'.join(self.allNums).replace('.', '\.'))
-        print("self.patternNum", self.patternNum, "\n")
-        self.patternArabiaNum = re.compile('|'.join(self.arabiaNums).replace('.', '\.'))
-        print("self.patternArabiaNum", self.patternArabiaNum, "\n")
-        self.patternOp = re.compile(
-            '(' +
-            '|'.join(self.allOperators)
-            .replace('+', '\+').replace('-', '\-').replace('*', '\*').replace('(', '\(').replace(')', '\)') +
-            ')')
-        print("self.patternOp", self.patternOp, "\n")
-        self.patternEq = re.compile('|'.join(self.mathFeatures))
-        print("self.patternEq", self.patternEq, "\n")
-        self.patternSpec = re.compile('|'.join(self.specWords))
-        print("self.patternSpec", self.patternSpec, "\n")
-        self.patternInterfere = re.compile('|'.join(self.interfereWord))
-        print("self.patternInterfere", self.patternInterfere)
-        self.patternBlackList = re.compile('|'.join(self.blackList))
-
-        print("self.patternBlackList", self.patternBlackList)
-
-math = DialogMath()
+if __name__ == '__main__':
+    myCalcMain()
